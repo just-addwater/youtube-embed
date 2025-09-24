@@ -2,33 +2,35 @@
 <html>
 <head>
     <title>Simple YouTube Embedder</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable-yes">
     <style>
-        /* Dark Mode Theme */
+        /* Dark Mode Theme - Full Width */
         body {
             font-family: Helvetica, Arial, sans-serif;
             background-color: #121212;
             color: #e0e0e0;
             text-align: center;
-            padding: 20px;
+            margin: 0; /* Removed body margin */
+            padding: 0; /* Removed body padding */
         }
 
         .container {
-            max-width: 600px;
-            margin: 0 auto;
+            /* Removed max-width and auto margins */
             background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
-            border: 1px solid #333;
-            margin-bottom: 20px;
+            padding: 15px; /* Adjusted padding */
+            border-bottom: 1px solid #333; /* Separator for containers */
+        }
+        
+        /* The history container is the last one, so no bottom border */
+        #historyContainer {
+            border-bottom: none;
         }
 
-        h1 { color: #ff4d4d; }
+        h1 { color: #ff4d4d; margin-top: 10px; }
         p { color: #a0a0a0; }
         
         input[type="text"] {
-            width: 80%;
+            width: 85%; /* Slightly increased width */
             padding: 12px;
             font-size: 16px;
             border: 1px solid #444;
@@ -56,8 +58,8 @@
             overflow: hidden;
             max-width: 100%;
             background: #000;
-            margin-top: 20px;
-            border-radius: 4px;
+            margin-top: 15px;
+            /* No border-radius for full-width */
         }
 
         .video-wrapper iframe {
@@ -73,13 +75,12 @@
         #historyList { list-style-type: none; padding: 0; }
         #historyList li {
             background-color: #2b2b2b;
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid #444;
             cursor: pointer;
         }
         #historyList li:hover { background-color: #3c3c3c; }
-        #historyList li:first-child { border-top-left-radius: 4px; border-top-right-radius: 4px; }
-        #historyList li:last-child { border-bottom: none; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
+        #historyList li:last-child { border-bottom: none; }
         .clear-history-btn { background-color: #555; margin-top: 15px; }
 
     </style>
@@ -88,7 +89,7 @@
 
     <div class="container">
         <h1>YouTube Embedder</h1>
-        <p>Paste a URL for a Video, Playlist, or Channel.</p>
+        <p>Paste a URL for a Video, Playlist, or Channel (must have /channel/UC... URL).</p>
         
         <input type="text" id="youtubeUrl" placeholder="Paste URL here...">
         <br>
@@ -110,18 +111,17 @@
 
         function handleEmbedClick() {
             var urlInput = document.getElementById('youtubeUrl').value;
-            var itemData = parseUrl(urlInput); // This function is now smarter
+            var itemData = parseUrl(urlInput);
 
             if (itemData) {
                 var nameInput = document.getElementById('itemName').value;
                 var name = (nameInput.trim() === '') ? urlInput : nameInput;
-
                 renderEmbed(itemData);
                 saveToHistory(itemData, name);
                 renderHistory();
             } else {
                 var videoContainer = document.getElementById('videoContainer');
-                videoContainer.innerHTML = '<p style="color:red;">Could not find a valid Video, Playlist, or Channel ID in that URL.</p>';
+                videoContainer.innerHTML = '<p style="color:red;">Could not find a valid ID. Note: Channel URLs with /@handle are not supported.</p>';
             }
         }
         
@@ -132,7 +132,6 @@
             if (itemData.type === 'video') {
                 embedUrl = 'https://www.youtube.com/embed/' + itemData.id;
             } else if (itemData.type === 'playlist') {
-                // This single URL format works for both regular playlists and channel uploads
                 embedUrl = 'https://www.youtube.com/embed/videoseries?list=' + itemData.id;
             }
 
@@ -142,11 +141,8 @@
             videoContainer.innerHTML = embedHtml;
         }
 
-        // --- UPDATED PARSING FUNCTION ---
         function parseUrl(url) {
             var processedUrl = url;
-
-            // First, handle Google redirect links
             if (url.indexOf("google.com/url?") !== -1) {
                 var q_start = url.indexOf('q=');
                 if (q_start !== -1) {
@@ -156,13 +152,11 @@
                 }
             }
             
-            // Check for a Playlist URL
             if (processedUrl.indexOf("playlist?list=") !== -1) {
                 var listId = processedUrl.split('list=')[1].split('&')[0];
                 return { type: 'playlist', id: listId };
             }
 
-            // Check for a Channel URL and convert its ID to an Uploads Playlist ID
             if (processedUrl.indexOf("/channel/UC") !== -1) {
                 var channelId = processedUrl.split('/channel/')[1].split('/')[0];
                 if (channelId.substring(0, 2) === "UC") {
@@ -171,17 +165,15 @@
                 }
             }
 
-            // Check for a Video URL (the fallback)
             var videoRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             var match = processedUrl.match(videoRegex);
             if (match && match[2].length == 11) {
                 return { type: 'video', id: match[2] };
             }
-
-            return null; // Return null if no valid format is found
+            return null;
         }
 
-        // --- History Functions (Updated to handle item object) ---
+        // --- History Functions ---
 
         function getHistory() {
             var history = localStorage.getItem('videoHistory');
@@ -192,41 +184,45 @@
             var history = getHistory();
             var isAlreadySaved = false;
             for (var i = 0; i < history.length; i++) {
-                if (history[i].id === itemData.id) {
-                    isAlreadySaved = true;
-                    break;
-                }
+                if (history[i].id === itemData.id) { isAlreadySaved = true; break; }
             }
             if (!isAlreadySaved) {
-                history.unshift({ id: itemData.id, type: itemData.type, name: name }); // Store type as well
+                history.unshift({ id: itemData.id, type: itemData.type, name: name });
                 if (history.length > 20) history.pop();
                 localStorage.setItem('videoHistory', JSON.stringify(history));
             }
         }
-
+        
+        // --- REWRITTEN HISTORY RENDER FUNCTION ---
         function renderHistory() {
             var history = getHistory();
             var historyList = document.getElementById('historyList');
-            historyList.innerHTML = ''; 
+            historyList.innerHTML = ''; // Clear the list
 
             if (history.length === 0) {
-                 historyList.innerHTML = '<p style="text-align:center; color:#777;">No items in history yet.</p>';
+                 historyList.innerHTML = '<li style="text-align:center; color:#777; cursor:default;">No items in history yet.</li>';
                  return;
             }
 
             for (var i = 0; i < history.length; i++) {
                 var item = history[i];
-                // JSON.stringify the item object to pass it into the onclick function
-                var itemString = JSON.stringify(item).replace(/'/g, "&apos;"); // Handle quotes
-                var listItemHtml = '<li onclick="embedFromHistory(' + itemString + ')">' + item.name + '</li>';
-                historyList.innerHTML += listItemHtml;
+                var li = document.createElement('li');
+                li.innerHTML = item.name;
+                
+                // This is the robust way to add a click event for old browsers.
+                // It creates a function that "remembers" the correct item for this specific <li>
+                li.onclick = (function(currentItem) {
+                    return function() {
+                        embedFromHistory(currentItem);
+                    };
+                })(item);
+
+                historyList.appendChild(li);
             }
         }
         
         function embedFromHistory(itemData) {
             document.getElementById('itemName').value = itemData.name;
-            
-            // Reconstruct a plausible URL for display
             var displayUrl = '';
             if(itemData.type === 'video') {
                 displayUrl = 'https://www.youtube.com/watch?v=' + itemData.id;
