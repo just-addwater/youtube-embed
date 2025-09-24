@@ -10,18 +10,16 @@
             background-color: #121212;
             color: #e0e0e0;
             text-align: center;
-            margin: 0; /* Removed body margin */
-            padding: 0; /* Removed body padding */
+            margin: 0;
+            padding: 0;
         }
 
         .container {
-            /* Removed max-width and auto margins */
             background-color: #1e1e1e;
-            padding: 15px; /* Adjusted padding */
-            border-bottom: 1px solid #333; /* Separator for containers */
+            padding: 15px;
+            border-bottom: 1px solid #333;
         }
         
-        /* The history container is the last one, so no bottom border */
         #historyContainer {
             border-bottom: none;
         }
@@ -30,7 +28,7 @@
         p { color: #a0a0a0; }
         
         input[type="text"] {
-            width: 85%; /* Slightly increased width */
+            width: 85%;
             padding: 12px;
             font-size: 16px;
             border: 1px solid #444;
@@ -59,7 +57,6 @@
             max-width: 100%;
             background: #000;
             margin-top: 15px;
-            /* No border-radius for full-width */
         }
 
         .video-wrapper iframe {
@@ -119,6 +116,11 @@
                 renderEmbed(itemData);
                 saveToHistory(itemData, name);
                 renderHistory();
+                
+                // --- NEW --- Clear the input fields after a successful embed
+                document.getElementById('youtubeUrl').value = '';
+                document.getElementById('itemName').value = '';
+
             } else {
                 var videoContainer = document.getElementById('videoContainer');
                 videoContainer.innerHTML = '<p style="color:red;">Could not find a valid ID. Note: Channel URLs with /@handle are not supported.</p>';
@@ -193,11 +195,10 @@
             }
         }
         
-        // --- REWRITTEN HISTORY RENDER FUNCTION ---
         function renderHistory() {
             var history = getHistory();
             var historyList = document.getElementById('historyList');
-            historyList.innerHTML = ''; // Clear the list
+            historyList.innerHTML = '';
 
             if (history.length === 0) {
                  historyList.innerHTML = '<li style="text-align:center; color:#777; cursor:default;">No items in history yet.</li>';
@@ -209,8 +210,6 @@
                 var li = document.createElement('li');
                 li.innerHTML = item.name;
                 
-                // This is the robust way to add a click event for old browsers.
-                // It creates a function that "remembers" the correct item for this specific <li>
                 li.onclick = (function(currentItem) {
                     return function() {
                         embedFromHistory(currentItem);
