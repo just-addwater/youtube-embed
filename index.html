@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple YouTube Embedder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <style>
+        /* Dark Mode Theme */
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            background-color: #121212; /* Dark background */
+            color: #e0e0e0; /* Light text */
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #1e1e1e; /* Slightly lighter container background */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            border: 1px solid #333;
+        }
+
+        h1 {
+            color: #ff4d4d; /* Bright red for title */
+        }
+        
+        p {
+            color: #a0a0a0; /* Softer text color for paragraphs */
+        }
+
+        /* Input fields and buttons styling for touch and dark mode */
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #444;
+            background-color: #2b2b2b;
+            color: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 12px 22px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #d10000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        /* Responsive video wrapper */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: #000;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* History Section Styling */
+        #historyContainer {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        #historyContainer h2 {
+            text-align: center;
+            color: #ccc;
+        }
+
+        #historyList {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #historyList li {
+            background-color: #2b2b2b;
+            padding: 10px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+        }
+        
+        #historyList li:hover {
+            background-color: #3c3c3c;
+        }
+        
+        #historyList li:first-child {
+             border-top-left-radius: 4px;
+             border-top-right-radius: 4px;
+        }
+        
+         #historyList li:last-child {
+             border-bottom: none;
+             border-bottom-left-radius: 4px;
+             border-bottom-right-radius: 4px;
+        }
+        
+        .clear-history-btn {
+            background-color: #555;
+            margin-top: 15px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>YouTube Video Embedder</h1>
+        <p>1. Paste a YouTube URL. <br>2. Give it a name to save in history.</p>
+        
+        <input type="text" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+        <br>
+        <input type="text" id="videoName" placeholder="Enter video name for history...">
+        <br>
+        <button onclick="handleEmbedClick()">Embed Video</button>
+
+        <div id="videoContainer"></div>
+    </div>
+    
+    <div class="container" id="historyContainer">
+         <h2>History</h2>
+         <ul id="historyList"></ul>
+         <button onclick="clearHistory()" class="clear-history-btn">Clear History</button>
+    </div>
+
+    <script>
+        // --- Main Functions ---
+
+        function handleEmbedClick() {
+            var urlInput = document.getElementById('youtubeUrl').value;
+            var videoId = getYouTubeID(urlInput);
+
+            if (videoId) {
+                var nameInput = document.getElementById('videoName').value;
+                // Use the URL as name if user provides none
+                var name = (nameInput.trim() === '') ? urlInput : nameInput;
+
+                embedVideo(videoId);
+                saveToHistory(videoId, name);
+                renderHistory();
+            } else {
+                var videoContainer = document.getElementById('videoContainer');
+                videoContainer.innerHTML = '<p style="color:red;">Could not find a valid YouTube video ID. Please check the URL.</p>';
+            }
+        }
+        
+        function embedVideo(videoId) {
+            var videoContainer = document.getElementById('videoContainer');
+            var embedHtml = '<div class="video-wrapper">' + 
+                              '<iframe src="https://www.youtube.com/embed/' + videoId + '" frameborder="0" allowfullscreen></iframe>' + 
+                            '</div>';
+            videoContainer.innerHTML = embedHtml;
+        }
+
+        function getYouTubeID(url) {
+            // This regex handles standard, mobile (m.), shortened (youtu.be), and embed URLs
+            var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            var match = url.match(regExp);
+            if (match && match[2].length == 11) {
+                return match[2];
+            } else {
+                return null;
+            }
+        }
+
+        // --- History Functions ---
+
+        function getHistory() {
+            // localStorage only stores strings, so we parse the JSON string back to an array
+            var history = localStorage.getItem('videoHistory');
+            return history ? JSON.parse(history) : [];
+        }
+
+        function saveToHistory(videoId, name) {
+            var history = getHistory();
+            
+            // Check if this videoId is already in the history to avoid duplicates
+            var isAlreadySaved = false;
+            for (var i = 0; i < history.length; i++) {
+                if (history[i].id === videoId) {
+                    isAlreadySaved = true;
+                    break;
+                }
+            }
+            
+            if (!isAlreadySaved) {
+                history.unshift({ id: videoId, name: name }); // Add new item to the beginning
+                 // Keep history to a reasonable size, e.g., 20 items
+                if (history.length > 20) {
+                    history.pop();
+                }
+                localStorage.setItem('videoHistory', JSON.stringify(history));
+            }
+        }
+
+        function renderHistory() {
+            var history = getHistory();
+            var historyList = document.getElementById('historyList');
+            historyList.innerHTML = ''; // Clear the current list
+
+            if (history.length === 0) {
+                 historyList.innerHTML = '<p style="text-align:center; color:#777;">No videos in history yet.</p>';
+                 return;
+            }
+
+            for (var i = 0; i < history.length; i++) {
+                var item = history[i];
+                // We create the list item as a string and add it.
+                // The onclick needs to pass the video ID as a string, hence the escaped quotes.
+                var listItemHtml = '<li onclick="embedFromHistory(\'' + item.id + '\')">' + item.name + '</li>';
+                historyList.innerHTML += listItemHtml;
+            }
+        }
+        
+        function embedFromHistory(videoId) {
+            var history = getHistory();
+            var name = "Unknown";
+            for(var i=0; i < history.length; i++){
+                if(history[i].id === videoId){
+                    name = history[i].name;
+                    break;
+                }
+            }
+            
+            // Populate the fields for user context
+            document.getElementById('youtubeUrl').value = 'https://www.youtube.com/watch?v=' + videoId;
+            document.getElementById('videoName').value = name;
+            
+            embedVideo(videoId);
+            // Scroll to top to see the video
+            window.scrollTo(0, 0);
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('videoHistory');
+            renderHistory();
+        }
+
+        // --- Initial Load ---
+        
+        // Render the history list when the page first loads
+        renderHistory();
+
+    </script>
+
+</body>
+</html>
