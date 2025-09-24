@@ -123,9 +123,9 @@
 
     <div class="container">
         <h1>YouTube Video Embedder</h1>
-        <p>1. Paste a YouTube URL. <br>2. Give it a name to save in history.</p>
+        <p>1. Paste a YouTube or Google search URL. <br>2. Give it a name to save in history.</p>
         
-        <input type="text" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+        <input type="text" id="youtubeUrl" placeholder="Paste URL here...">
         <br>
         <input type="text" id="videoName" placeholder="Enter video name for history...">
         <br>
@@ -149,7 +149,7 @@
 
             if (videoId) {
                 var nameInput = document.getElementById('videoName').value;
-                // Use the URL as name if user provides none
+                // Use the original URL as a fallback name if user provides none
                 var name = (nameInput.trim() === '') ? urlInput : nameInput;
 
                 embedVideo(videoId);
@@ -169,10 +169,26 @@
             videoContainer.innerHTML = embedHtml;
         }
 
+        // --- UPDATED FUNCTION ---
         function getYouTubeID(url) {
-            // This regex handles standard, mobile (m.), shortened (youtu.be), and embed URLs
+            var processedUrl = url;
+
+            // Check if it's a Google redirect URL and parse it
+            if (url.indexOf("google.com/url?") !== -1) {
+                var q_start = url.indexOf('q=');
+                if (q_start !== -1) {
+                    var q_end = url.indexOf('&', q_start);
+                    if (q_end === -1) {
+                        q_end = url.length;
+                    }
+                    var encodedUrl = url.substring(q_start + 2, q_end);
+                    processedUrl = decodeURIComponent(encodedUrl);
+                }
+            }
+            
+            // Now, run the original regex on the processed (potentially cleaned) URL
             var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            var match = url.match(regExp);
+            var match = processedUrl.match(regExp);
             if (match && match[2].length == 11) {
                 return match[2];
             } else {
@@ -183,15 +199,12 @@
         // --- History Functions ---
 
         function getHistory() {
-            // localStorage only stores strings, so we parse the JSON string back to an array
             var history = localStorage.getItem('videoHistory');
             return history ? JSON.parse(history) : [];
         }
 
         function saveToHistory(videoId, name) {
             var history = getHistory();
-            
-            // Check if this videoId is already in the history to avoid duplicates
             var isAlreadySaved = false;
             for (var i = 0; i < history.length; i++) {
                 if (history[i].id === videoId) {
@@ -199,10 +212,8 @@
                     break;
                 }
             }
-            
             if (!isAlreadySaved) {
-                history.unshift({ id: videoId, name: name }); // Add new item to the beginning
-                 // Keep history to a reasonable size, e.g., 20 items
+                history.unshift({ id: videoId, name: name });
                 if (history.length > 20) {
                     history.pop();
                 }
@@ -213,7 +224,7 @@
         function renderHistory() {
             var history = getHistory();
             var historyList = document.getElementById('historyList');
-            historyList.innerHTML = ''; // Clear the current list
+            historyList.innerHTML = ''; 
 
             if (history.length === 0) {
                  historyList.innerHTML = '<p style="text-align:center; color:#777;">No videos in history yet.</p>';
@@ -222,8 +233,6 @@
 
             for (var i = 0; i < history.length; i++) {
                 var item = history[i];
-                // We create the list item as a string and add it.
-                // The onclick needs to pass the video ID as a string, hence the escaped quotes.
                 var listItemHtml = '<li onclick="embedFromHistory(\'' + item.id + '\')">' + item.name + '</li>';
                 historyList.innerHTML += listItemHtml;
             }
@@ -239,12 +248,10 @@
                 }
             }
             
-            // Populate the fields for user context
             document.getElementById('youtubeUrl').value = 'https://www.youtube.com/watch?v=' + videoId;
             document.getElementById('videoName').value = name;
             
             embedVideo(videoId);
-            // Scroll to top to see the video
             window.scrollTo(0, 0);
         }
 
