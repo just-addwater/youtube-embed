@@ -1,0 +1,1 @@
+Youtube on much older iOS devices no longer seems to work. At least for the regular and mobile sites. However embeded videos still function correctly. This page allows you to search for a video then embed it by click the button. 
