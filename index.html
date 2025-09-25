@@ -6,94 +6,62 @@
     <style>
         /* Dark Mode Theme - Full Width */
         body {
-            font-family: Helvetica, Arial, sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
-            text-align: center;
-            margin: 0;
-            padding: 0;
+            font-family: Helvetica, Arial, sans-serif; background-color: #121212;
+            color: #e0e0e0; text-align: center; margin: 0; padding: 0;
         }
-
         .container {
-            background-color: #1e1e1e;
-            padding: 15px;
-            border-bottom: 1px solid #333;
+            background-color: #1e1e1e; padding: 15px; border-bottom: 1px solid #333;
         }
-        
-        #historyContainer {
-            border-bottom: none;
-        }
-
+        #historyContainer { border-bottom: none; }
         h1 { color: #ff4d4d; margin-top: 10px; }
         p { color: #a0a0a0; }
-        
         input[type="text"] {
-            width: 85%;
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #444;
-            background-color: #2b2b2b;
-            color: #e0e0e0;
-            border-radius: 4px;
-            margin-bottom: 10px;
+            width: 85%; padding: 12px; font-size: 16px; border: 1px solid #444;
+            background-color: #2b2b2b; color: #e0e0e0; border-radius: 4px; margin-bottom: 10px;
         }
-
         button {
-            padding: 12px 22px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #d10000;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            margin-top: 10px;
+            padding: 12px 22px; font-size: 16px; cursor: pointer;
+            background-color: #d10000; color: white; border: none; border-radius: 4px; margin-top: 10px;
         }
-
+        .search-button { background-color: #1a73e8; } /* Blue for search button */
+        /* iframe style is no longer needed */
         .video-wrapper {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
-            overflow: hidden;
-            max-width: 100%;
-            background: #000;
-            margin-top: 15px;
+            position: relative; padding-bottom: 56.25%; height: 0;
+            overflow: hidden; max-width: 100%; background: #000; margin-top: 15px;
         }
-
         .video-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         }
-        
         #historyContainer { text-align: left; }
         #historyContainer h2 { text-align: center; color: #ccc; }
         #historyList { list-style-type: none; padding: 0; }
         #historyList li {
-            background-color: #2b2b2b;
-            padding: 12px;
-            border-bottom: 1px solid #444;
-            cursor: pointer;
+            background-color: #2b2b2b; padding: 12px; border-bottom: 1px solid #444; cursor: pointer;
         }
         #historyList li:hover { background-color: #3c3c3c; }
         #historyList li:last-child { border-bottom: none; }
         .clear-history-btn { background-color: #555; margin-top: 15px; }
-
     </style>
 </head>
 <body>
 
+    <!-- UPDATED SEARCH SECTION -->
     <div class="container">
-        <h1>YouTube Embedder</h1>
-        <p>Paste a URL for a Video, Playlist, or Channel (must have /channel/UC... URL).</p>
-        
+        <h1>Find Videos</h1>
+        <p>Type your search below. The results will open in a new tab. Copy a link from there and paste it in the embedder.</p>
+        <input type="text" id="searchQuery" placeholder="Search for YouTube videos...">
+        <br>
+        <button onclick="performSearch()" class="search-button">Search in New Tab</button>
+    </div>
+
+    <div class="container">
+        <h1>Embed Video</h1>
+        <p>Paste a URL for a Video, Playlist, or Channel.</p>
         <input type="text" id="youtubeUrl" placeholder="Paste URL here...">
         <br>
         <input type="text" id="itemName" placeholder="Enter name for history...">
         <br>
         <button onclick="handleEmbedClick()">Embed</button>
-
         <div id="videoContainer"></div>
     </div>
     
@@ -104,45 +72,49 @@
     </div>
 
     <script>
-        // --- Main Functions ---
+        // --- UPDATED SEARCH FUNCTION ---
+        function performSearch() {
+            var searchQuery = document.getElementById('searchQuery').value;
+            
+            // Your specific Public URL is used here
+            var searchBaseUrl = 'https://cse.google.com/cse?cx=05efa34c0194344ee'; 
+            
+            if (searchQuery.trim() !== '') {
+                // Construct the final search URL
+                var fullUrl = searchBaseUrl + '&q=' + encodeURIComponent(searchQuery);
+                // Open the URL in a new tab. This is highly compatible.
+                window.open(fullUrl, '_blank');
+            }
+        }
 
+        // --- All other JavaScript functions remain the same ---
         function handleEmbedClick() {
             var urlInput = document.getElementById('youtubeUrl').value;
             var itemData = parseUrl(urlInput);
-
             if (itemData) {
                 var nameInput = document.getElementById('itemName').value;
                 var name = (nameInput.trim() === '') ? urlInput : nameInput;
                 renderEmbed(itemData);
                 saveToHistory(itemData, name);
                 renderHistory();
-                
-                // --- NEW --- Clear the input fields after a successful embed
                 document.getElementById('youtubeUrl').value = '';
                 document.getElementById('itemName').value = '';
-
             } else {
                 var videoContainer = document.getElementById('videoContainer');
                 videoContainer.innerHTML = '<p style="color:red;">Could not find a valid ID. Note: Channel URLs with /@handle are not supported.</p>';
             }
         }
-        
         function renderEmbed(itemData) {
             var videoContainer = document.getElementById('videoContainer');
             var embedUrl = '';
-
             if (itemData.type === 'video') {
                 embedUrl = 'https://www.youtube.com/embed/' + itemData.id;
             } else if (itemData.type === 'playlist') {
                 embedUrl = 'https://www.youtube.com/embed/videoseries?list=' + itemData.id;
             }
-
-            var embedHtml = '<div class="video-wrapper">' + 
-                              '<iframe src="' + embedUrl + '" frameborder="0" allowfullscreen></iframe>' + 
-                            '</div>';
+            var embedHtml = '<div class="video-wrapper">' + '<iframe src="' + embedUrl + '" frameborder="0" allowfullscreen></iframe>' + '</div>';
             videoContainer.innerHTML = embedHtml;
         }
-
         function parseUrl(url) {
             var processedUrl = url;
             if (url.indexOf("google.com/url?") !== -1) {
@@ -153,12 +125,10 @@
                     processedUrl = decodeURIComponent(url.substring(q_start + 2, q_end));
                 }
             }
-            
             if (processedUrl.indexOf("playlist?list=") !== -1) {
                 var listId = processedUrl.split('list=')[1].split('&')[0];
                 return { type: 'playlist', id: listId };
             }
-
             if (processedUrl.indexOf("/channel/UC") !== -1) {
                 var channelId = processedUrl.split('/channel/')[1].split('/')[0];
                 if (channelId.substring(0, 2) === "UC") {
@@ -166,7 +136,6 @@
                     return { type: 'playlist', id: uploadsId };
                 }
             }
-
             var videoRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             var match = processedUrl.match(videoRegex);
             if (match && match[2].length == 11) {
@@ -174,14 +143,10 @@
             }
             return null;
         }
-
-        // --- History Functions ---
-
         function getHistory() {
             var history = localStorage.getItem('videoHistory');
             return history ? JSON.parse(history) : [];
         }
-
         function saveToHistory(itemData, name) {
             var history = getHistory();
             var isAlreadySaved = false;
@@ -194,32 +159,24 @@
                 localStorage.setItem('videoHistory', JSON.stringify(history));
             }
         }
-        
         function renderHistory() {
             var history = getHistory();
             var historyList = document.getElementById('historyList');
             historyList.innerHTML = '';
-
             if (history.length === 0) {
                  historyList.innerHTML = '<li style="text-align:center; color:#777; cursor:default;">No items in history yet.</li>';
                  return;
             }
-
             for (var i = 0; i < history.length; i++) {
                 var item = history[i];
                 var li = document.createElement('li');
                 li.innerHTML = item.name;
-                
                 li.onclick = (function(currentItem) {
-                    return function() {
-                        embedFromHistory(currentItem);
-                    };
+                    return function() { embedFromHistory(currentItem); };
                 })(item);
-
                 historyList.appendChild(li);
             }
         }
-        
         function embedFromHistory(itemData) {
             document.getElementById('itemName').value = itemData.name;
             var displayUrl = '';
@@ -229,19 +186,14 @@
                  displayUrl = 'https://www.youtube.com/playlist?list=' + itemData.id;
             }
             document.getElementById('youtubeUrl').value = displayUrl;
-            
             renderEmbed(itemData);
             window.scrollTo(0, 0);
         }
-
         function clearHistory() {
             localStorage.removeItem('videoHistory');
             renderHistory();
         }
-
-        // --- Initial Load ---
         renderHistory();
     </script>
-
 </body>
 </html>
