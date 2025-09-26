@@ -21,10 +21,14 @@
         }
         button {
             padding: 12px 22px; font-size: 16px; cursor: pointer;
-            background-color: #d10000; color: white; border: none; border-radius: 4px; margin-top: 10px;
+            color: white; border: none; border-radius: 4px; margin-top: 10px;
         }
-        .search-button { background-color: #1a73e8; } /* Blue for search button */
-        /* iframe style is no longer needed */
+        .embed-button { background-color: #d10000; } /* Red for the main embed button */
+        
+        /* Styles for the two new search buttons */
+        .search-button-ddg { background-color: #de5833; } /* DuckDuckGo Orange */
+        .search-button-google { background-color: #4285F4; } /* Google Blue */
+
         .video-wrapper {
             position: relative; padding-bottom: 56.25%; height: 0;
             overflow: hidden; max-width: 100%; background: #000; margin-top: 15px;
@@ -45,13 +49,14 @@
 </head>
 <body>
 
-    <!-- UPDATED SEARCH SECTION -->
+    <!-- UPDATED SEARCH SECTION WITH TWO BUTTONS -->
     <div class="container">
         <h1>Find Videos</h1>
         <p>Type your search below. The results will open in a new tab. Copy a link from there and paste it in the embedder.</p>
         <input type="text" id="searchQuery" placeholder="Search for YouTube videos...">
         <br>
-        <button onclick="performSearch()" class="search-button">Search in New Tab</button>
+        <button onclick="performDuckDuckGoSearch()" class="search-button-ddg">Search on DuckDuckGo</button>
+        <button onclick="performGoogleSearch()" class="search-button-google">Search on Google</button>
     </div>
 
     <div class="container">
@@ -61,7 +66,7 @@
         <br>
         <input type="text" id="itemName" placeholder="Enter name for history...">
         <br>
-        <button onclick="handleEmbedClick()">Embed</button>
+        <button onclick="handleEmbedClick()" class="embed-button">Embed</button>
         <div id="videoContainer"></div>
     </div>
     
@@ -72,18 +77,24 @@
     </div>
 
     <script>
-        // --- UPDATED SEARCH FUNCTION ---
-        function performSearch() {
+        // --- UPDATED SEARCH FUNCTIONS ---
+        function performDuckDuckGoSearch() {
             var searchQuery = document.getElementById('searchQuery').value;
-            
-            // Your specific Public URL is used here
-            var searchBaseUrl = 'https://cse.google.com/cse?cx=05efa34c0194344ee'; 
-            
             if (searchQuery.trim() !== '') {
-                // Construct the final search URL
-                var fullUrl = searchBaseUrl + '&q=' + encodeURIComponent(searchQuery);
-                // Open the URL in a new tab. This is highly compatible.
-                window.open(fullUrl, '_blank');
+                // Add the site:youtube.com filter to the query
+                var fullQuery = searchQuery + ' site:youtube.com';
+                var searchUrl = 'https://duckduckgo.com/html?q=' + encodeURIComponent(fullQuery);
+                window.open(searchUrl, '_blank');
+            }
+        }
+
+        function performGoogleSearch() {
+            var searchQuery = document.getElementById('searchQuery').value;
+            if (searchQuery.trim() !== '') {
+                // Add the site:youtube.com filter to the query
+                var fullQuery = searchQuery + ' site:youtube.com';
+                var searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(fullQuery);
+                window.open(searchUrl, '_blank');
             }
         }
 
@@ -196,4 +207,4 @@
         renderHistory();
     </script>
 </body>
-</html>
+</html>```
