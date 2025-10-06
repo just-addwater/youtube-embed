@@ -25,9 +25,8 @@
         }
         .embed-button { background-color: #d10000; } /* Red for the main embed button */
         
-        /* Styles for the two new search buttons */
+        /* Styles for the two search buttons */
         .search-button-ddg { background-color: #de5833; } /* DuckDuckGo Orange */
-        .search-button-google { background-color: #4285F4; } /* Google Blue */
 
         .video-wrapper {
             position: relative; padding-bottom: 56.25%; height: 0;
@@ -49,14 +48,14 @@
 </head>
 <body>
 
-    <!-- UPDATED SEARCH SECTION WITH TWO BUTTONS -->
+    <!-- SEARCH SECTION WITH TWO DUCKDUCKGO BUTTONS -->
     <div class="container">
         <h1>Find Videos</h1>
-        <p>Type your search below. The results will open in a new tab. Copy a link from there and paste it in the embedder.</p>
+        <p>Type your search below. The results will open in a new tab. Use the "Lite" version if "HTML" is slow.</p>
         <input type="text" id="searchQuery" placeholder="Search for YouTube videos...">
         <br>
-        <button onclick="performDuckDuckGoSearch()" class="search-button-ddg">Search on DuckDuckGo</button>
-        <button onclick="performGoogleSearch()" class="search-button-google">Search on Google</button>
+        <button onclick="performDuckDuckGoHtmlSearch()" class="search-button-ddg">Search DDG (HTML)</button>
+        <button onclick="performDuckDuckGoLiteSearch()" class="search-button-ddg">Search DDG (Lite)</button>
     </div>
 
     <div class="container">
@@ -77,23 +76,21 @@
     </div>
 
     <script>
-        // --- UPDATED SEARCH FUNCTIONS ---
-        function performDuckDuckGoSearch() {
+        // --- SEARCH FUNCTIONS ---
+        function performDuckDuckGoHtmlSearch() {
             var searchQuery = document.getElementById('searchQuery').value;
             if (searchQuery.trim() !== '') {
-                // Add the site:youtube.com filter to the query
                 var fullQuery = searchQuery + ' site:youtube.com';
-                var searchUrl = 'https://duckduckgo.com/html?q=' + encodeURIComponent(fullQuery);
+                var searchUrl = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(fullQuery);
                 window.open(searchUrl, '_blank');
             }
         }
 
-        function performGoogleSearch() {
+        function performDuckDuckGoLiteSearch() {
             var searchQuery = document.getElementById('searchQuery').value;
             if (searchQuery.trim() !== '') {
-                // Add the site:youtube.com filter to the query
                 var fullQuery = searchQuery + ' site:youtube.com';
-                var searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(fullQuery);
+                var searchUrl = 'https://lite.duckduckgo.com/lite/?q=' + encodeURIComponent(fullQuery);
                 window.open(searchUrl, '_blank');
             }
         }
@@ -166,7 +163,10 @@
             }
             if (!isAlreadySaved) {
                 history.unshift({ id: itemData.id, type: itemData.type, name: name });
-                if (history.length > 20) history.pop();
+                // --- UPDATED HISTORY LIMIT ---
+                if (history.length > 35) { // Increased from 20 to 35
+                    history.pop();
+                }
                 localStorage.setItem('videoHistory', JSON.stringify(history));
             }
         }
@@ -207,4 +207,4 @@
         renderHistory();
     </script>
 </body>
-</html>```
+</html>
