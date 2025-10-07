@@ -25,8 +25,8 @@
         }
         .embed-button { background-color: #d10000; } /* Red for the main embed button */
         
-        /* Styles for the two search buttons */
-        .search-button-ddg { background-color: #de5833; } /* DuckDuckGo Orange */
+        /* Yahoo Purple */
+        .search-button-yahoo { background-color: #600090; } 
 
         .video-wrapper {
             position: relative; padding-bottom: 56.25%; height: 0;
@@ -48,14 +48,13 @@
 </head>
 <body>
 
-    <!-- SEARCH SECTION WITH TWO DUCKDUCKGO BUTTONS -->
+    <!-- UPDATED SEARCH SECTION WITH YAHOO -->
     <div class="container">
         <h1>Find Videos</h1>
-        <p>Type your search below. The results will open in a new tab. Use the "Lite" version if "HTML" is slow.</p>
+        <p>Type your search below. The results will open in a new tab. Copy a link from there and paste it in the embedder.</p>
         <input type="text" id="searchQuery" placeholder="Search for YouTube videos...">
         <br>
-        <button onclick="performDuckDuckGoHtmlSearch()" class="search-button-ddg">Search DDG (HTML)</button>
-        <button onclick="performDuckDuckGoLiteSearch()" class="search-button-ddg">Search DDG (Lite)</button>
+        <button onclick="performYahooSearch()" class="search-button-yahoo">Search on Yahoo</button>
     </div>
 
     <div class="container">
@@ -76,26 +75,65 @@
     </div>
 
     <script>
-        // --- SEARCH FUNCTIONS ---
-        function performDuckDuckGoHtmlSearch() {
+        // --- NEW YAHOO SEARCH FUNCTION ---
+        function performYahooSearch() {
             var searchQuery = document.getElementById('searchQuery').value;
             if (searchQuery.trim() !== '') {
-                var fullQuery = searchQuery + ' site:youtube.com';
-                var searchUrl = 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(fullQuery);
+                // Yahoo Video Search URL format
+                var searchUrl = 'https://video.search.yahoo.com/search?p=' + encodeURIComponent(searchQuery);
                 window.open(searchUrl, '_blank');
             }
         }
+        
+        // --- REWRITTEN PARSEURL FUNCTION ---
+        function parseUrl(url) {
+            var processedUrl = url;
 
-        function performDuckDuckGoLiteSearch() {
-            var searchQuery = document.getElementById('searchQuery').value;
-            if (searchQuery.trim() !== '') {
-                var fullQuery = searchQuery + ' site:youtube.com';
-                var searchUrl = 'https://lite.duckduckgo.com/lite/?q=' + encodeURIComponent(fullQuery);
-                window.open(searchUrl, '_blank');
+            // Check for Yahoo Video Search URLs
+            if (url.indexOf("video.search.yahoo.com") !== -1 && url.indexOf("rurl=") !== -1) {
+                var rurl_start = url.indexOf("rurl=") + 5;
+                var rurl_end = url.indexOf('&', rurl_start);
+                if (rurl_end === -1) rurl_end = url.length;
+                processedUrl = decodeURIComponent(url.substring(rurl_start, rurl_end));
+            } 
+            // Check for Yahoo Redirect URLs
+            else if (url.indexOf("r.search.yahoo.com") !== -1 && url.indexOf("/RU=") !== -1) {
+                var ru_start = url.indexOf("/RU=") + 4;
+                var ru_end = url.indexOf('/RK=', ru_start);
+                if (ru_end === -1) ru_end = url.length;
+                processedUrl = decodeURIComponent(url.substring(ru_start, ru_end));
             }
+            // Check for Google Redirect URLs
+            else if (url.indexOf("google.com/url?") !== -1) {
+                var q_start = url.indexOf('q=');
+                if (q_start !== -1) {
+                    var q_end = url.indexOf('&', q_start);
+                    if (q_end === -1) q_end = url.length;
+                    processedUrl = decodeURIComponent(url.substring(q_start + 2, q_end));
+                }
+            }
+
+            // --- The rest of the parsing logic uses the cleaned 'processedUrl' ---
+            if (processedUrl.indexOf("playlist?list=") !== -1) {
+                var listId = processedUrl.split('list=')[1].split('&')[0];
+                return { type: 'playlist', id: listId };
+            }
+            if (processedUrl.indexOf("/channel/UC") !== -1) {
+                var channelId = processedUrl.split('/channel/')[1].split('/')[0];
+                if (channelId.substring(0, 2) === "UC") {
+                    var uploadsId = "UU" + channelId.substring(2);
+                    return { type: 'playlist', id: uploadsId };
+                }
+            }
+            var videoRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            var match = processedUrl.match(videoRegex);
+            if (match && match[2].length == 11) {
+                return { type: 'video', id: match[2] };
+            }
+            return null;
         }
 
-        // --- All other JavaScript functions remain the same ---
+        // --- All other functions remain the same ---
         function handleEmbedClick() {
             var urlInput = document.getElementById('youtubeUrl').value;
             var itemData = parseUrl(urlInput);
@@ -123,34 +161,6 @@
             var embedHtml = '<div class="video-wrapper">' + '<iframe src="' + embedUrl + '" frameborder="0" allowfullscreen></iframe>' + '</div>';
             videoContainer.innerHTML = embedHtml;
         }
-        function parseUrl(url) {
-            var processedUrl = url;
-            if (url.indexOf("google.com/url?") !== -1) {
-                var q_start = url.indexOf('q=');
-                if (q_start !== -1) {
-                    var q_end = url.indexOf('&', q_start);
-                    if (q_end === -1) q_end = url.length;
-                    processedUrl = decodeURIComponent(url.substring(q_start + 2, q_end));
-                }
-            }
-            if (processedUrl.indexOf("playlist?list=") !== -1) {
-                var listId = processedUrl.split('list=')[1].split('&')[0];
-                return { type: 'playlist', id: listId };
-            }
-            if (processedUrl.indexOf("/channel/UC") !== -1) {
-                var channelId = processedUrl.split('/channel/')[1].split('/')[0];
-                if (channelId.substring(0, 2) === "UC") {
-                    var uploadsId = "UU" + channelId.substring(2);
-                    return { type: 'playlist', id: uploadsId };
-                }
-            }
-            var videoRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            var match = processedUrl.match(videoRegex);
-            if (match && match[2].length == 11) {
-                return { type: 'video', id: match[2] };
-            }
-            return null;
-        }
         function getHistory() {
             var history = localStorage.getItem('videoHistory');
             return history ? JSON.parse(history) : [];
@@ -163,8 +173,7 @@
             }
             if (!isAlreadySaved) {
                 history.unshift({ id: itemData.id, type: itemData.type, name: name });
-                // --- UPDATED HISTORY LIMIT ---
-                if (history.length > 35) { // Increased from 20 to 35
+                if (history.length > 35) { 
                     history.pop();
                 }
                 localStorage.setItem('videoHistory', JSON.stringify(history));
