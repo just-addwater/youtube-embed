@@ -25,8 +25,10 @@
         }
         .embed-button { background-color: #d10000; } /* Red for the main embed button */
         
-        /* Yahoo Purple */
-        .search-button-yahoo { background-color: #600090; } 
+        /* Yahoo Purple for Video Search */
+        .search-button-yahoo-video { background-color: #600090; } 
+        /* A slightly different purple for Web Search */
+        .search-button-yahoo-web { background-color: #4d1a66; } 
 
         .video-wrapper {
             position: relative; padding-bottom: 56.25%; height: 0;
@@ -48,13 +50,14 @@
 </head>
 <body>
 
-    <!-- UPDATED SEARCH SECTION WITH YAHOO -->
+    <!-- UPDATED SEARCH SECTION WITH TWO YAHOO BUTTONS -->
     <div class="container">
         <h1>Find Videos</h1>
         <p>Type your search below. The results will open in a new tab. Copy a link from there and paste it in the embedder.</p>
         <input type="text" id="searchQuery" placeholder="Search for YouTube videos...">
         <br>
-        <button onclick="performYahooSearch()" class="search-button-yahoo">Search on Yahoo</button>
+        <button onclick="performYahooVideoSearch()" class="search-button-yahoo-video">Search YouTube (via Video)</button>
+        <button onclick="performYahooWebSearch()" class="search-button-yahoo-web">Search YouTube (via Web)</button>
     </div>
 
     <div class="container">
@@ -75,17 +78,28 @@
     </div>
 
     <script>
-        // --- NEW YAHOO SEARCH FUNCTION ---
-        function performYahooSearch() {
+        // --- UPDATED SEARCH FUNCTIONS ---
+        function performYahooVideoSearch() {
             var searchQuery = document.getElementById('searchQuery').value;
             if (searchQuery.trim() !== '') {
-                // Yahoo Video Search URL format
-                var searchUrl = 'https://video.search.yahoo.com/search?p=' + encodeURIComponent(searchQuery);
+                // We add "site:youtube.com" to filter the results
+                var fullQuery = searchQuery + ' site:youtube.com';
+                var searchUrl = 'https://video.search.yahoo.com/search?p=' + encodeURIComponent(fullQuery);
                 window.open(searchUrl, '_blank');
             }
         }
         
-        // --- REWRITTEN PARSEURL FUNCTION ---
+        function performYahooWebSearch() {
+            var searchQuery = document.getElementById('searchQuery').value;
+            if (searchQuery.trim() !== '') {
+                // We add "site:youtube.com" to filter the results
+                var fullQuery = searchQuery + ' site:youtube.com';
+                var searchUrl = 'https://search.yahoo.com/search?p=' + encodeURIComponent(fullQuery);
+                window.open(searchUrl, '_blank');
+            }
+        }
+        
+        // --- The robust parseUrl function handles all cases ---
         function parseUrl(url) {
             var processedUrl = url;
 
@@ -96,7 +110,7 @@
                 if (rurl_end === -1) rurl_end = url.length;
                 processedUrl = decodeURIComponent(url.substring(rurl_start, rurl_end));
             } 
-            // Check for Yahoo Redirect URLs
+            // Check for Yahoo Redirect URLs (used by Web search)
             else if (url.indexOf("r.search.yahoo.com") !== -1 && url.indexOf("/RU=") !== -1) {
                 var ru_start = url.indexOf("/RU=") + 4;
                 var ru_end = url.indexOf('/RK=', ru_start);
